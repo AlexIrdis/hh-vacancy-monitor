@@ -31,3 +31,5 @@ state.db
 # ОС
 Thumbs.db
 .DS_Store
+
+hh_profile/
