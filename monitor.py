@@ -37,6 +37,13 @@ def tick(cfg: Settings, store: Store, session: requests.Session,
          headless: bool = False) -> dict:
     """Один цикл: получить → сравнить → запомнить → отправить."""
     vacancies = hh_client.fetch_vacancies(headless=headless)
+
+    # СТОРОЖ: пустая выборка — это всегда инцидент, а не «новых нет»
+    if not vacancies:
+        raise RuntimeError(
+            "Пустая выборка: 403/капча, протухла сессия или сменилась разметка сайта"
+        )
+
     known = store.known_ids()
     fresh = [v for v in vacancies if v["id"] not in known]
 
@@ -99,6 +106,11 @@ def main() -> int:
                 stats = tick(cfg, store, session, headless=args.headless)
                 if failures:
                     log.info("Связь восстановлена после %s ошибок", failures)
+                    try:
+                        notifier.send(session, cfg,
+                                      f"✅ Мониторинг восстановился после {failures} ошибок")
+                    except Exception:
+                        pass
                     failures = 0
 
                 if stats["seeded"]:
